@@ -1,0 +1,37 @@
+version: '3.9'  # Use the latest version of the Compose file format
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # command: >
+    #   sh -c "poetry run python dealmanager/manage.py migrate &&
+    #          poetry run python dealmanager/manage.py runserver 0.0.0.0:8000"
+
+    command: >
+      sh -c "poetry run python manage.py migrate &&
+             poetry run gunicorn DealManager.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app  # Mount the current directory to the /app directory in the container
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+
+    depends_on:
+      - db
+
+  db:
+    image: postgres:alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB:  ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+
+volumes:
+  postgres_data:
